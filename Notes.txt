@@ -1,33 +1,42 @@
 WebGpu
 
-	ToDo - Get the basic example of javascript running. This includes using the async javascript 
-		functions.
-		
-		ToDo - Get this basic sample running.
-			https://developers.google.com/web/updates/2019/08/get-started-with-gpu-compute-on-the-web
-		
-		
-		Done - Commit to github
-		
-		Done - Create a basic web api dot net core app so that there is a way to serve up pages.
-		
-			Done - Scroll down to the bottom of the tutorial document where it has another link to enable web 
-				pages. The section is called "Call the web API with JavaScript", click the link.
-				Link: https://docs.microsoft.com/en-us/aspnet/core/tutorials/web-api-javascript?view=aspnetcore-3.1
-				
-				Follow the steps to enable IIS to support regular web pages.
-					
-					Update startup.cs file.
-				
-					Add folder wwwroot and add an index.html page to it.
-				
-				
-			Done - Create the basic web api project using the following tutorial as a guide. You don't 
-				need to actually build the tutorial specifc web APIs from the example. Just use it as 
-				a guide on what to select when creating a new project. Visual studio will automatically 
-				create a basic controller and so on.
-				https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-web-api?view=aspnetcore-3.1&tabs=visual-studio
-		
-	Done - Set the flags to use the new Gpu functionality.		
 
-	Done - Download Edge Canary.
+	Version 0.001
+	
+		Commit Version 0.001
+
+		Done - Get the basic example of javascript running. This includes using the async javascript 
+			functions.
+			
+			Done - Get this basic sample running.
+				https://developers.google.com/web/updates/2019/08/get-started-with-gpu-compute-on-the-web
+			
+			
+			
+				Done - Add to the example so that a javascript view can be created to read from the 
+					binary array.
+				
+			Done - Commit to github
+			
+			Done - Create a basic web api dot net core app so that there is a way to serve up pages.
+			
+				Done - Scroll down to the bottom of the tutorial document where it has another link to enable web 
+					pages. The section is called "Call the web API with JavaScript", click the link.
+					Link: https://docs.microsoft.com/en-us/aspnet/core/tutorials/web-api-javascript?view=aspnetcore-3.1
+					
+					Follow the steps to enable IIS to support regular web pages.
+						
+						Update startup.cs file.
+					
+						Add folder wwwroot and add an index.html page to it.
+					
+					
+				Done - Create the basic web api project using the following tutorial as a guide. You don't 
+					need to actually build the tutorial specifc web APIs from the example. Just use it as 
+					a guide on what to select when creating a new project. Visual studio will automatically 
+					create a basic controller and so on.
+					https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-web-api?view=aspnetcore-3.1&tabs=visual-studio
+			
+		Done - Set the flags to use the new Gpu functionality.		
+
+		Done - Download Edge Canary.
