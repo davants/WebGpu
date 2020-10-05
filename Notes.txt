@@ -1,0 +1,10 @@
+WebGpu
+
+	ToDo - Get the basic example of javascript running. This includes using the async javascript 
+		functions.
+		
+	
+		
+	Done - Set the flags to use the new Gpu functionality.		
+
+	Done - Download Edge Canary.
