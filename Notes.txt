@@ -1,6 +1,38 @@
 WebGpu
 
 
+	Version 0.002 
+	
+		Commit version 0.002
+	
+		Done - Get tutorials running locally. 
+		
+			https://github.com/tsherif/webgpu-examples#:~:text=WebGPU%20Examples%201%20Blank%3A%20Setting%20up%20a%20swap,buffers%2C%20and%20animating%20a%20cube.%20More%20items...%20
+			
+			
+			
+			Done - Get the cube-texture-lighting.html
+			
+				I need to get the texture somehow.
+				
+				See running example: https://tsherif.github.io/webgpu-examples/cube-texture-lighting.html
+				
+				
+				
+				Done - Add the html file to the local web app.
+			
+			Done - Add links to all the samples on the main index.html page.
+			
+			Done - Get the cube.html running locally.
+			
+				Cube runs and it working correctly:
+					Running Sample: https://tsherif.github.io/webgpu-examples/cube.html
+				
+					Local IIS: https://localhost:44326/cube.html
+				
+				
+
+
 	Version 0.001
 	
 		Commit Version 0.001
