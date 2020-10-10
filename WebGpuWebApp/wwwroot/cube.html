@@ -29,12 +29,13 @@
   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 -->
 <body>
+    
     <canvas id="webgpu-canvas"></canvas>
     <script>
 utils.checkSupport();
 utils.addDescription(
     "Cube",
-    "Setting up vertex and uniform buffers, and animating a cube.",
+    "Setting up vertex and uniform buffers, and animating a cube. <h4>Gpu Buffer Note</h4>This example copies data to a Gpu buffer by using the command queue instead of mapping and doing it real-time.",
     "cube.html"
 );
 
@@ -42,6 +43,15 @@ utils.addDescription(
     //////////////////////////////////////////
     // Set up WebGPU adapter and load glslang
     // to compile GLSL to SPIR-V
+    //      DTS:
+    //      SPIR-V is the first open standard, cross - API intermediate language for natively representing 
+    //      parallel compute and graphics and is part of the core specifications of OpenCL 2.1, OpenCL 2.2, 
+    //      and the Vulkan GPU API.SPIR - V is also supported in an OpenGL 4.6 extension.SPIR–V does not use 
+    //      LLVM, and so is isolated from LLVM roadmap changes.
+
+
+
+
     //////////////////////////////////////////
 
     const [adapter, glslang] = await Promise.all([
@@ -100,9 +110,9 @@ utils.addDescription(
     mat4.lookAt(viewMatrix, [1, 1, 1], [0, 0, 0], [0, 1, 0]);
     mat4.multiply(viewProjectionMatrix, projectionMatrix, viewMatrix);
 
-    /////////////////////////////////////////////
-    // Create uniform buffers and binding layout
-    /////////////////////////////////////////////
+    ///////////////////////////////////////////// 
+    // Create uniform buffers and binding layout 
+    ///////////////////////////////////////////// 
 
     const sceneUniformBuffer = device.createBuffer({
         size: 64,

@@ -1,5 +1,34 @@
 WebGpu
 
+	Version 0.003
+	
+		ToDo - Review "2 Object Example below and compair to existing cube2.html code.
+	
+		Done - Find 2 Object Example.
+		
+			Running Example: https://austineng.github.io/webgpu-samples/?wgsl=0#twoCubes
+		
+			Code: https://github.com/austinEng/webgpu-samples/blob/master/src/examples/twoCubes.ts
+			
+		Done - Update cube2.html to copy data to the Gpu buffer real-time using map and un-map 
+			instead of using the command queue and submitting a command list.
+	
+		Done - Change what the camera is looking at.
+			
+			Done - Determin the matrix that holds the camera's information.
+			
+				Done - Make notes in the cube2.html file.
+			
+				viewMatrix - has eye position, look at and up direction.
+			
+			Done - Create another cube html document called cube2.html and 
+				copy the code from cube.html to it.
+	
+		Done - Review cube.html 
+	
+		Done - Review the "blank.html" project.
+
+
 
 	Version 0.002 
 	

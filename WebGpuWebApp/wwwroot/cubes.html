@@ -1,0 +1,327 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="css/example.css">
+    <script src="utils/gl-matrix.js"></script>
+    <script src="utils/utils.js"></script>
+</head>
+<!--
+  The MIT License (MIT)
+
+  Copyright (c) 2020 Tarek Sherif
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of
+  this software and associated documentation files (the "Software"), to deal in
+  the Software without restriction, including without limitation the rights to
+  use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+  the Software, and to permit persons to whom the Software is furnished to do so,
+  subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+  FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-->
+<body>
+    <canvas id="webgpu-canvas"></canvas>
+    <script>
+        utils.checkSupport();
+        utils.addDescription(
+            "Cube",
+            "Setting up vertex and uniform buffers, and animating a cube. <h4>Gpu Buffer Note</h4>This example copies data to a Gpu buffer real-time by mapping and un-mapping.",
+            "cube.html"
+        );
+
+        (async () => {
+            //////////////////////////////////////////
+            // Set up WebGPU adapter and load glslang
+            // to compile GLSL to SPIR-V
+            //      DTS:
+            //      SPIR-V is the first open standard, cross - API intermediate language for natively representing
+            //      parallel compute and graphics and is part of the core specifications of OpenCL 2.1, OpenCL 2.2,
+            //      and the Vulkan GPU API.SPIR - V is also supported in an OpenGL 4.6 extension.SPIR–V does not use
+            //      LLVM, and so is isolated from LLVM roadmap changes.
+
+
+
+
+            //////////////////////////////////////////
+
+            const [adapter, glslang] = await Promise.all([
+                navigator.gpu.requestAdapter(),
+                import("https://unpkg.com/@webgpu/glslang@0.0.7/web/glslang.js").then(m => m.default())
+            ]);
+
+            ///////////////////////////////////////
+            // Set up device and canvas swap chain
+            ///////////////////////////////////////
+
+            const device = await adapter.requestDevice();
+
+            const canvas = document.getElementById("webgpu-canvas");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+
+
+            //const aspect = Math.abs(canvas.width / canvas.height);
+            //let projectionMatrix = mat4.create();
+            //mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 1, 100.0);
+
+            //const context = canvas.getContext('gpupresent');
+
+            //const swapChain = context.configureSwapChain({
+            //    device,
+            //    format: "bgra8unorm"
+            //});
+
+            //const cubeData = utils.createCube();
+            //const numVertices = cubeData.positions.length / 3;
+
+
+            //const verticesBuffer = device.createBuffer({
+            //    size: cubeData.positions.byteLength,
+            //    usage: GPUBufferUsage.VERTEX,
+            //    mappedAtCreation: true,
+            //});
+
+            //alert('test');
+
+            /////////////////////
+            // old code
+
+
+
+            const context = canvas.getContext("gpupresent");
+            const swapChainFormat = await context.getSwapChainPreferredFormat(device);
+            const swapChain = context.configureSwapChain({
+                device,
+                format: swapChainFormat
+            });
+
+            ////////////////////////////////////////
+            // Create vertex buffers and load data
+            ////////////////////////////////////////
+
+            const cubeData = utils.createCube();
+            const numVertices = cubeData.positions.length / 3;
+
+            const positionBuffer = device.createBuffer({
+                size: cubeData.positions.byteLength,
+                usage: GPUBufferUsage.VERTEX,
+                mappedAtCreation: true,
+            });
+
+            new Float32Array(positionBuffer.getMappedRange()).set(cubeData.positions);
+            positionBuffer.unmap();
+
+
+            const normalBuffer = device.createBuffer({
+                size: cubeData.normals.byteLength,
+                usage: GPUBufferUsage.VERTEX,
+                mappedAtCreation: true,
+            });
+
+            new Float32Array(normalBuffer.getMappedRange()).set(cubeData.normals);
+            normalBuffer.unmap();
+
+
+            /////////////////
+            // Uniform data
+            /////////////////
+
+            const projectionMatrix = mat4.create();
+            const viewMatrix = mat4.create();
+            const modelMatrix = mat4.create();
+            const viewProjectionMatrix = mat4.create();
+            const mvpMatrix = mat4.create();
+            const rotation = [0, 0, 0];
+
+            mat4.perspective(projectionMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, 10.0)
+            mat4.lookAt(viewMatrix, [1, 1, 1], [0, 0, 0], [0, 1, 0]);
+            mat4.multiply(viewProjectionMatrix, projectionMatrix, viewMatrix);
+
+            /////////////////////////////////////////////
+            // Create uniform buffers and binding layout
+            /////////////////////////////////////////////
+
+            const sceneUniformBuffer = device.createBuffer({
+                size: 64,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+            });
+
+            const sceneUniformBindGroupLayout = device.createBindGroupLayout({
+                entries: [{
+                    binding: 0,
+                    visibility: GPUShaderStage.VERTEX,
+                    type: "uniform-buffer"
+                }]
+            });
+
+
+            const sceneUniformBindGroup = device.createBindGroup({
+                layout: sceneUniformBindGroupLayout,
+                entries: [{
+                    binding: 0,
+                    resource: {
+                        buffer: sceneUniformBuffer
+                    }
+                }]
+            });
+
+            ///////////////////////////
+            // Create render pipeline
+            ///////////////////////////
+
+            const vs = `
+        #version 450
+
+        layout(location=0) in vec4 position;
+        layout(location=1) in vec3 normal;
+
+        layout(set=0, binding=0) uniform SceneUniforms {
+            mat4 mvpMatrix;
+        };
+
+        layout(location=0) out vec3 vNormal;
+
+        void main() {
+            vNormal = normal;
+            gl_Position = mvpMatrix * position;
+        }
+        `.trim();
+
+            const fs = `
+        #version 450
+
+        layout(location=0) in vec3 vNormal;
+
+        layout(location=0) out vec4 fragColor;
+
+        void main() {
+            fragColor = vec4(abs(vNormal), 1.0);
+        }
+        `.trim();
+
+            const pipeline = device.createRenderPipeline({
+                layout: device.createPipelineLayout({ bindGroupLayouts: [sceneUniformBindGroupLayout] }),
+                vertexStage: {
+                    module: device.createShaderModule({
+                        code: glslang.compileGLSL(vs, "vertex")
+                    }),
+                    entryPoint: "main"
+                },
+                fragmentStage: {
+                    module: device.createShaderModule({
+                        code: glslang.compileGLSL(fs, "fragment")
+                    }),
+                    entryPoint: "main"
+                },
+                primitiveTopology: "triangle-list",
+                depthStencilState: {
+                    format: "depth24plus",
+                    depthWriteEnabled: true,
+                    depthCompare: "less"
+                },
+                vertexState: {
+                    vertexBuffers: [
+                        {
+                            arrayStride: 12,
+                            attributes: [{
+                                shaderLocation: 0,
+                                format: "float3",
+                                offset: 0
+                            }]
+                        },
+                        {
+                            arrayStride: 12,
+                            attributes: [{
+                                shaderLocation: 1,
+                                format: "float3",
+                                offset: 0
+                            }]
+                        }
+                    ]
+                },
+                colorStates: [{
+                    format: swapChainFormat
+                }]
+            });
+
+            ///////////////////////////
+            // Render pass description
+            ///////////////////////////
+
+            const depthTexture = device.createTexture({
+                size: [canvas.width, canvas.height, 1],
+                format: "depth24plus",
+                usage: GPUTextureUsage.OUTPUT_ATTACHMENT
+            });
+
+            const renderPassDescription = {
+                colorAttachments: [{
+                    attachment: swapChain.getCurrentTexture().createView(),
+                    loadValue: [0, 0, 0, 1]
+                }],
+                depthStencilAttachment: {
+                    attachment: depthTexture.createView(),
+                    depthLoadValue: 1,
+                    depthStoreOp: "store",
+                    stencilLoadValue: 0,
+                    stencilStoreOp: "store"
+                }
+            };
+
+            requestAnimationFrame(function draw() {
+                /////////////////////////
+                // Update uniform buffer
+                /////////////////////////
+
+                rotation[0] += 0.01;
+                rotation[1] += 0.01;
+                utils.xformMatrix(modelMatrix, null, rotation, null);
+                mat4.multiply(mvpMatrix, viewProjectionMatrix, modelMatrix);
+
+                device.defaultQueue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
+
+                ////////////////////
+                // Swap framebuffer
+                ////////////////////
+
+                renderPassDescription.colorAttachments[0].attachment = swapChain.getCurrentTexture().createView();
+
+                ////////////////////////////////////
+                // Create and submit command buffer
+                ////////////////////////////////////
+
+                const commandEncoder = device.createCommandEncoder();
+                const renderPass = commandEncoder.beginRenderPass(renderPassDescription);
+
+                renderPass.setPipeline(pipeline);
+
+                // First argument here refers to array index
+                // in pipeline vertexState.vertexBuffers
+                renderPass.setVertexBuffer(0, positionBuffer);
+                renderPass.setVertexBuffer(1, normalBuffer);
+
+                // First argument here refers to array index
+                // in pipeline layout.bindGroupLayouts
+                renderPass.setBindGroup(0, sceneUniformBindGroup);
+
+                renderPass.draw(numVertices, 1, 0, 0);
+                renderPass.endPass();
+
+                device.defaultQueue.submit([commandEncoder.finish()]);
+
+                requestAnimationFrame(draw);
+            });
+        })();
+    </script>
+</body>
+</html>
