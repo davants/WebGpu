@@ -4,6 +4,8 @@ WebGpu
 	
 		Done - Get 2 cube working for the texture example.
 		
+			Create seperate buffer for view project and transformations.
+		
 			Notes - The texture example does not have two buffers for the model's world space and 
 				another for the view projection.
 
