@@ -1,14 +1,39 @@
 WebGpu
 
-	Version 0.003
+	Version 0.005 
 	
-		ToDo - Review "2 Object Example below and compair to existing cube2.html code.
+		Done - Get 2 cube working for the texture example.
+		
+			Notes - The texture example does not have two buffers for the model's world space and 
+				another for the view projection.
+
+	Version 0.004
 	
+		Done - Update the cubes.html to support multiple objects.
+	
+		Done - Working to support 2 objects using the "twoCubes" example.
+		
+			Done - Create a seperate mvc matrix for the second box.
+		
+			Done - Increase the size of the uniform buffer to be able to hold two 
+				model view projection matricies.
+		
+			Done - Review both code examples for 1 and 2 objects.
+	
+		Done - Review "2 Object Example below and compair to existing cube2.html code.
+
 		Done - Find 2 Object Example.
 		
 			Running Example: https://austineng.github.io/webgpu-samples/?wgsl=0#twoCubes
 		
 			Code: https://github.com/austinEng/webgpu-samples/blob/master/src/examples/twoCubes.ts
+
+				Or,downloaded "TwoCubesExampleDoesNotRun.ts" which does not run.
+
+	Version 0.003
+	
+		Done - Great tutorial on model, view and projection matrix.
+			http://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
 			
 		Done - Update cube2.html to copy data to the Gpu buffer real-time using map and un-map 
 			instead of using the command queue and submitting a command list.

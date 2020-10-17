@@ -109,6 +109,8 @@
             // Create vertex buffers and load data
             ////////////////////////////////////////
 
+            // A Vertex is each angular point of a polygon. Each "point" needs x, y and z to describe it.
+
             const cubeData = utils.createCube();
             const numVertices = cubeData.positions.length / 3;
 
@@ -136,12 +138,19 @@
             // Uniform data
             /////////////////
 
+            // http://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
+
             const projectionMatrix = mat4.create();
             const viewMatrix = mat4.create();
             const modelMatrix = mat4.create();
             const viewProjectionMatrix = mat4.create();
-            const mvpMatrix = mat4.create();
+            // mvp - model view projection
+            const mvpMatrix1 = mat4.create();
+            const mvpMatrix2 = mat4.create();
             const rotation = [0, 0, 0];
+
+            const translate1 = [0, 0, 0];
+            const translate2 = [-1, -1, -7];
 
             mat4.perspective(projectionMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, 10.0)
             mat4.lookAt(viewMatrix, [1, 1, 1], [0, 0, 0], [0, 1, 0]);
@@ -151,10 +160,23 @@
             // Create uniform buffers and binding layout
             /////////////////////////////////////////////
 
+            // Uniform Buffer - This is a Gpu buffer.
+            //      The main advantage of using uniform buffers is that they can be shared between several GLSL shaders.
+            //      Then, a single UBO is enough for all shaders that use the same data.
+            //      From a GLSL shader point of view, an uniform buffer is a read - only memory buffer.
+
+            // For this version, I will increase the size of the buffer to be able to hold 2 MVC matricies.
+            const matrixSize = 4 * 16;  // 4x4 matrix
+            const offset = 256; // uniformBindGroup offset must be 256-byte aligned
+            const uniformBufferSize = offset + matrixSize;
+
+
             const sceneUniformBuffer = device.createBuffer({
-                size: 64,
+                size: uniformBufferSize,
                 usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
             });
+
+            // Later on, the mvpMatrix will be copied over to the sceneUniformBuffer before each draw call.
 
             const sceneUniformBindGroupLayout = device.createBindGroupLayout({
                 entries: [{
@@ -165,49 +187,63 @@
             });
 
 
-            const sceneUniformBindGroup = device.createBindGroup({
+            const sceneUniformBindGroup1 = device.createBindGroup({
                 layout: sceneUniformBindGroupLayout,
                 entries: [{
                     binding: 0,
                     resource: {
-                        buffer: sceneUniformBuffer
+                        buffer: sceneUniformBuffer,
+                        offset: 0
                     }
                 }]
             });
+
+
+            const sceneUniformBindGroup2 = device.createBindGroup({
+                layout: sceneUniformBindGroupLayout,
+                entries: [{
+                    binding: 0,
+                    resource: {
+                        buffer: sceneUniformBuffer,
+                        offset: offset
+                    }
+                }]
+            });
+
 
             ///////////////////////////
             // Create render pipeline
             ///////////////////////////
 
             const vs = `
-        #version 450
+                #version 450
 
-        layout(location=0) in vec4 position;
-        layout(location=1) in vec3 normal;
+                layout(location=0) in vec4 position;
+                layout(location=1) in vec3 normal;
 
-        layout(set=0, binding=0) uniform SceneUniforms {
-            mat4 mvpMatrix;
-        };
+                layout(set=0, binding=0) uniform SceneUniforms {
+                    mat4 mvpMatrix;
+                };
 
-        layout(location=0) out vec3 vNormal;
+                layout(location=0) out vec3 vNormal;
 
-        void main() {
-            vNormal = normal;
-            gl_Position = mvpMatrix * position;
-        }
-        `.trim();
+                void main() {
+                    vNormal = normal;
+                    gl_Position = mvpMatrix * position;
+                }
+                `.trim();
 
             const fs = `
-        #version 450
+                #version 450
 
-        layout(location=0) in vec3 vNormal;
+                layout(location=0) in vec3 vNormal;
 
-        layout(location=0) out vec4 fragColor;
+                layout(location=0) out vec4 fragColor;
 
-        void main() {
-            fragColor = vec4(abs(vNormal), 1.0);
-        }
-        `.trim();
+                void main() {
+                    fragColor = vec4(abs(vNormal), 1.0);
+                }
+                `.trim();
 
             const pipeline = device.createRenderPipeline({
                 layout: device.createPipelineLayout({ bindGroupLayouts: [sceneUniformBindGroupLayout] }),
@@ -285,10 +321,20 @@
 
                 rotation[0] += 0.01;
                 rotation[1] += 0.01;
-                utils.xformMatrix(modelMatrix, null, rotation, null);
-                mat4.multiply(mvpMatrix, viewProjectionMatrix, modelMatrix);
+                utils.xformMatrix(modelMatrix, translate1, rotation, null);
+                mat4.multiply(mvpMatrix1, viewProjectionMatrix, modelMatrix);
 
-                device.defaultQueue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix);
+                device.defaultQueue.writeBuffer(sceneUniformBuffer, 0, mvpMatrix1);
+
+
+                // Second object
+                utils.xformMatrix(modelMatrix, translate2, rotation, null);
+                mat4.multiply(mvpMatrix2, viewProjectionMatrix, modelMatrix);
+                // write the second object to the buffer
+                device.defaultQueue.writeBuffer(sceneUniformBuffer, offset, mvpMatrix2);
+
+
+               
 
                 ////////////////////
                 // Swap framebuffer
@@ -312,9 +358,19 @@
 
                 // First argument here refers to array index
                 // in pipeline layout.bindGroupLayouts
-                renderPass.setBindGroup(0, sceneUniformBindGroup);
+                renderPass.setBindGroup(0, sceneUniformBindGroup1);
 
                 renderPass.draw(numVertices, 1, 0, 0);
+
+                // draw second object
+                renderPass.setBindGroup(0, sceneUniformBindGroup2);
+
+                renderPass.draw(numVertices, 1, 0, 0);
+
+
+
+
+
                 renderPass.endPass();
 
                 device.defaultQueue.submit([commandEncoder.finish()]);

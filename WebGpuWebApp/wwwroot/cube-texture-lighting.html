@@ -54,9 +54,9 @@ utils.addDescription(
         img.decode()
     ]);
 
-    ///////////////////////////////////////
-    // Set up device and canvas swap chain
-    ///////////////////////////////////////
+    //////////////////////////////////////////
+    // Set up device and canvas swap chain  //
+    //////////////////////////////////////////
 
     const device = await adapter.requestDevice();
 
@@ -128,6 +128,8 @@ utils.addDescription(
     // Create vertex buffers and load data
     ////////////////////////////////////////
 
+    // A Vertex is each angular point of a polygon. Each "point" needs x, y and z to describe it.
+
     const cubeData = utils.createCube();
     const numVertices = cubeData.positions.length / 3;
 
@@ -152,6 +154,13 @@ utils.addDescription(
     // Uniform data
     /////////////////
 
+    const offset = 256; // uniformBindGroup offset must be 256-byte aligned
+    const numberOfObject = 50;
+    const sizeOfObjectTransformationAndMoreList = offset * numberOfObject;
+
+
+    // http://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
+
     const eyePosition = new Float32Array([1, 1, 1]);
     const lightPosition = new Float32Array([1, 1, 1]);
 
@@ -161,6 +170,7 @@ utils.addDescription(
     const viewProjectionMatrix = mat4.create();
     const mvpMatrix = mat4.create();
     const rotation = [0, 0, 0];
+    const translation = [0, -1, -5];
 
     mat4.perspective(projectionMatrix, Math.PI / 2, canvas.width / canvas.height, 0.1, 10.0)
     mat4.lookAt(viewMatrix, [1, 1, 1], [0, 0, 0], [0, 1, 0]);
@@ -170,7 +180,16 @@ utils.addDescription(
     // Create uniform buffers and binding layout
     /////////////////////////////////////////////
 
+
+
+    // All the object transformations and extra!
     const vertexUniformBuffer = device.createBuffer({
+        size: sizeOfObjectTransformationAndMoreList,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // view projection and extra!
+    const vertexUniformBuffer2 = device.createBuffer({
         size: 128,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
@@ -180,7 +199,11 @@ utils.addDescription(
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
 
-    device.defaultQueue.writeBuffer(vertexUniformBuffer, 64, viewProjectionMatrix);
+    // Notice that the offset is 64 here. The First 64 holds the world transformation and is updated 
+    // later in code.
+    //device.defaultQueue.writeBuffer(vertexUniformBuffer, 64, viewProjectionMatrix);
+    device.defaultQueue.writeBuffer(vertexUniformBuffer2, 64, viewProjectionMatrix);
+
     device.defaultQueue.writeBuffer(fragmentUniformBuffer, 0, eyePosition);
     device.defaultQueue.writeBuffer(fragmentUniformBuffer, 16, lightPosition);
 
@@ -205,6 +228,11 @@ utils.addDescription(
                 binding: 3,
                 visibility: GPUShaderStage.FRAGMENT,
                 type: "sampled-texture"
+            },
+            {
+                binding: 4,
+                visibility: GPUShaderStage.VERTEX,
+                type: "uniform-buffer"
             }
         ]
     });
@@ -215,7 +243,8 @@ utils.addDescription(
             {
                 binding: 0,
                 resource: {
-                    buffer: vertexUniformBuffer
+                    buffer: vertexUniformBuffer,
+                    offset: 0
                 }
             },
             {
@@ -231,10 +260,59 @@ utils.addDescription(
             {
                 binding: 3,
                 resource: texture.createView()
+            },
+            {
+                binding: 4,
+                resource: {
+                    buffer: vertexUniformBuffer2
+                }
             }
 
         ]
     });
+
+
+
+
+
+
+    const sceneUniformBindGroup2 = device.createBindGroup({
+        layout: sceneUniformBindGroupLayout,
+        entries: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: vertexUniformBuffer,
+                    offset: offset
+                }
+            },
+            {
+                binding: 1,
+                resource: {
+                    buffer: fragmentUniformBuffer
+                }
+            },
+            {
+                binding: 2,
+                resource: sampler
+            },
+            {
+                binding: 3,
+                resource: texture.createView()
+            },
+            {
+                binding: 4,
+                resource: {
+                    buffer: vertexUniformBuffer2
+                }
+            }
+
+        ]
+    });
+
+
+
+
 
     ///////////////////////////
     // Create render pipeline
@@ -252,6 +330,11 @@ utils.addDescription(
         mat4 viewProjectionMatrix;
     };
 
+    layout(set=0, binding=4) uniform VertexUniforms2 {
+        mat4 worldMatrix2;
+        mat4 viewProjectionMatrix2;
+    };
+
     layout(location=0) out vec3 vPosition;
     layout(location=1) out vec3 vNormal;
     layout(location=2) out vec2 vUV;
@@ -261,7 +344,7 @@ utils.addDescription(
         vPosition = worldPosition.xyz;
         vNormal = mat3(worldMatrix) * normal;
         vUV = uv;
-        gl_Position = viewProjectionMatrix * worldPosition;
+        gl_Position = viewProjectionMatrix2 * worldPosition;
     }
     `.trim();
 
@@ -380,9 +463,18 @@ utils.addDescription(
 
         rotation[0] += 0.01;
         rotation[2] += 0.005;
-        utils.xformMatrix(modelMatrix, null, rotation, null);
 
+
+        // First object
+        utils.xformMatrix(modelMatrix, null, rotation, null);
         device.defaultQueue.writeBuffer(vertexUniformBuffer, 0, modelMatrix);
+
+
+        // Second object
+        utils.xformMatrix(modelMatrix, translation, rotation, null);
+        device.defaultQueue.writeBuffer(vertexUniformBuffer, offset, modelMatrix);
+
+        
 
         ////////////////////
         // Swap framebuffer
@@ -404,8 +496,13 @@ utils.addDescription(
         // First argument here refers to array index
         // in pipeline layout.bindGroupLayouts
         renderPass.setBindGroup(0, sceneUniformBindGroup);
-
         renderPass.draw(numVertices, 1, 0, 0);
+
+
+        renderPass.setBindGroup(0, sceneUniformBindGroup2);
+        renderPass.draw(numVertices, 1, 0, 0);
+
+
         renderPass.endPass();
 
         device.defaultQueue.submit([commandEncoder.finish()]);

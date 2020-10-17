@@ -109,6 +109,8 @@
             // Create vertex buffers and load data
             ////////////////////////////////////////
 
+            // A Vertex is each angular point of a polygon. Each "point" needs x, y and z to describe it.
+
             const cubeData = utils.createCube();
             const numVertices = cubeData.positions.length / 3;
 
@@ -136,10 +138,13 @@
             // Uniform data
             /////////////////
 
+            // http://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
+
             const projectionMatrix = mat4.create();
             const viewMatrix = mat4.create();
             const modelMatrix = mat4.create();
             const viewProjectionMatrix = mat4.create();
+            // mvp - model view projection
             const mvpMatrix = mat4.create();
             const rotation = [0, 0, 0];
 
