@@ -5,6 +5,8 @@
     <link rel="stylesheet" href="css/example.css">
     <script src="utils/gl-matrix.js"></script>
     <script src="utils/utils.js"></script>
+    <script src="utils/dtsutils.js"></script>
+
 </head>
 <!--
   The MIT License (MIT)
@@ -36,9 +38,18 @@ utils.addDescription(
     "Textured, Lit Cube",
     "Creating a texture from a DOM image, setting up vertex and uniform buffers, and animating a cube.",
     "cube-texture-lighting.html"
-);
+        );
 
-(async () => {
+
+
+        (async () => {
+
+
+
+            function myFunction(item) {
+                alert('group');
+            }
+
     //////////////////////////////////////////
     // Set up WebGPU adapter, load glslang
     // to compile GLSL to SPIR-V, load
@@ -179,6 +190,49 @@ utils.addDescription(
     /////////////////////////////////////////////
     // Create uniform buffers and binding layout
     /////////////////////////////////////////////
+
+    // objects that are connected by constraints are grouped.
+    var text = '{ "listOfGroups" : [' +
+
+        '{ "objectGroup" : ' +
+            '[' +
+              '{ "rotation":[ 0.001, 0.01, 0.01  ] ,    "translation":[ 0.001, 0.001,0.001     ]  },' +
+               '{ "rotation":[ 0.001, 0.01, 0.01  ] ,  "translation":[ -1.001, -2.001,-7.001  ]  },' +
+                '{ "rotation":[ 0.001, 0.01, 0.01  ] ,  "translation":[ 0.001,  -1.001,-5.001  ]  } ' +
+            ']' + 
+        '}' + 
+
+        ']}';
+
+
+
+
+            var obj = JSON.parse(text);
+
+
+           var vListOfGroups = obj["listOfGroups"];
+
+    
+            // see new file utils/dtsutils.js
+            vListOfGroups.forEach(dtsutils.setupGroup);
+
+   
+
+
+
+
+
+    // All the object transformations and extra!
+    const vertexUniformBufferX = device.createBuffer({
+        size: sizeOfObjectTransformationAndMoreList,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+    // All the object transformations and extra!
+    const vertexUniformBufferX2 = device.createBuffer({
+        size: sizeOfObjectTransformationAndMoreList,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
 
 
 

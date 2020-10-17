@@ -1,6 +1,34 @@
 WebGpu
 
+	Version 0.007
+		
+		Done - commit!
+	
+		The new json object group and the contained objects are not being used yet. 
+			They are only at the design stage.
+		
+		Done - Create a list of object groups - Not used yet for graphics... just starting to 
+			stub things out. 
+			
+			The json objects will be returned by a web api.
+			
+			Meaning, one object can be a group of other objects.
+			Each object group will have its own buffer.
+		
+			The web site will receive a json document that describes the needed objects.
+			
+			Done - Call the functions in the new dtsutils file. Have a function call a 
+				function.
+			
+			Done - Create my own js util file.
+			
+			Done - Create a list json doc; hard coded.
+			
+			
+
 	Version 0.005 
+	
+		Done - Commit
 	
 		Done - Get 2 cube working for the texture example.
 		
