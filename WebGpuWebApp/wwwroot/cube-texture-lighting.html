@@ -3,7 +3,19 @@
 <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="css/example.css">
-    <script src="utils/gl-matrix.js"></script>
+
+    <script>
+
+        const offset = 256; // uniformBindGroup offset must be 256-byte aligned
+        const numberOfObject = 50;
+        const sizeOfObjectTransformationAndMoreList = offset * numberOfObject;
+
+
+     
+
+    </script>
+
+            <script src="utils/gl-matrix.js"></script>
     <script src="utils/utils.js"></script>
     <script src="utils/dtsutils.js"></script>
 
@@ -33,6 +45,8 @@
 <body>
     <canvas id="webgpu-canvas"></canvas>
     <script>
+    
+    
 utils.checkSupport();
 utils.addDescription(
     "Textured, Lit Cube",
@@ -55,6 +69,13 @@ utils.addDescription(
     // to compile GLSL to SPIR-V, load
     // texture image
     //////////////////////////////////////////
+
+           //      DTS:
+            //      SPIR-V is the first open standard, cross - API intermediate language for natively representing
+            //      parallel compute and graphics and is part of the core specifications of OpenCL 2.1, OpenCL 2.2,
+            //      and the Vulkan GPU API.SPIR - V is also supported in an OpenGL 4.6 extension.SPIR–V does not use
+            //      LLVM, and so is isolated from LLVM roadmap changes.
+
 
     const img = document.createElement("img");
     img.src = "img/marble.png";
@@ -165,9 +186,12 @@ utils.addDescription(
     // Uniform data
     /////////////////
 
-    const offset = 256; // uniformBindGroup offset must be 256-byte aligned
-    const numberOfObject = 50;
-    const sizeOfObjectTransformationAndMoreList = offset * numberOfObject;
+    // Uniform Buffer - This is a Gpu buffer.
+    //      The main advantage of using uniform buffers is that they can be shared between several GLSL shaders.
+    //      Then, a single UBO is enough for all shaders that use the same data.
+    //      From a GLSL shader point of view, an uniform buffer is a read - only memory buffer.
+
+
 
 
     // http://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
@@ -214,36 +238,46 @@ utils.addDescription(
 
     
             // see new file utils/dtsutils.js
-            vListOfGroups.forEach(dtsutils.setupGroup);
+         //   vListOfGroups.forEach(dtsutils.setupGroup);
+
+
+            class J316Group {
+                constructor() {
+                    this.ObjectBuffer = device.createBuffer({
+                        size: sizeOfObjectTransformationAndMoreList,
+                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+                    });
+
+                    this.SomeValue = 10;
+                }
+
+                getOffset(vIndex) {
+                    return offset * vIndex;
+                }
+            }
+
+            class J316GroupListContainer {
+                constructor() {
+
+                    this.GroupList = new Array();
+
+                    var first2 = new J316Group();
+                    this.GroupList.push(first2);
+                }
+            }
+
+
+            var vJ316GroupListContainer = new J316GroupListContainer();
+
+
+
+
+            const modelMatrixUniformBuffer = vJ316GroupListContainer.GroupList[0].ObjectBuffer;
 
    
 
-
-
-
-
-    // All the object transformations and extra!
-    const vertexUniformBufferX = device.createBuffer({
-        size: sizeOfObjectTransformationAndMoreList,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
-    // All the object transformations and extra!
-    const vertexUniformBufferX2 = device.createBuffer({
-        size: sizeOfObjectTransformationAndMoreList,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
-
-
-    // All the object transformations and extra!
-    const vertexUniformBuffer = device.createBuffer({
-        size: sizeOfObjectTransformationAndMoreList,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-    });
-
     // view projection and extra!
-    const vertexUniformBuffer2 = device.createBuffer({
+    const viewProjectionBuffer = device.createBuffer({
         size: 128,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
@@ -253,10 +287,44 @@ utils.addDescription(
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
 
+
+
+
+
+
+
+
+            // WORKING HERE...
+
+            /// Below, this is just a test to create an object that holds a list of dynamically created Gpu buffers.
+            // Note, the created buffer is not being used yet.
+
+            // WORKS!!!! Not tested using the new buffer, but it should work!
+
+
+
+            // Structure 
+
+            //var vGroup = new Object();
+            //var vGroupBuffer = device.createBuffer({
+            //    size: sizeOfObjectTransformationAndMoreList,
+            //    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+            //});
+
+            //vGroup.GroupBuffer = vGroupBuffer;
+
+            //vGroupListContainer.GroupList.push(vGroup);
+
+            // Add a function to the group that returns offset for a given object in the group.
+
+
+
+
+
     // Notice that the offset is 64 here. The First 64 holds the world transformation and is updated 
     // later in code.
-    //device.defaultQueue.writeBuffer(vertexUniformBuffer, 64, viewProjectionMatrix);
-    device.defaultQueue.writeBuffer(vertexUniformBuffer2, 64, viewProjectionMatrix);
+    //device.defaultQueue.writeBuffer(modelMatrixUniformBuffer, 64, viewProjectionMatrix);
+    device.defaultQueue.writeBuffer(viewProjectionBuffer, 64, viewProjectionMatrix);
 
     device.defaultQueue.writeBuffer(fragmentUniformBuffer, 0, eyePosition);
     device.defaultQueue.writeBuffer(fragmentUniformBuffer, 16, lightPosition);
@@ -297,7 +365,7 @@ utils.addDescription(
             {
                 binding: 0,
                 resource: {
-                    buffer: vertexUniformBuffer,
+                    buffer: modelMatrixUniformBuffer,
                     offset: 0
                 }
             },
@@ -318,7 +386,7 @@ utils.addDescription(
             {
                 binding: 4,
                 resource: {
-                    buffer: vertexUniformBuffer2
+                    buffer: viewProjectionBuffer
                 }
             }
 
@@ -336,7 +404,7 @@ utils.addDescription(
             {
                 binding: 0,
                 resource: {
-                    buffer: vertexUniformBuffer,
+                    buffer: modelMatrixUniformBuffer,
                     offset: offset
                 }
             },
@@ -357,7 +425,7 @@ utils.addDescription(
             {
                 binding: 4,
                 resource: {
-                    buffer: vertexUniformBuffer2
+                    buffer: viewProjectionBuffer
                 }
             }
 
@@ -521,12 +589,12 @@ utils.addDescription(
 
         // First object
         utils.xformMatrix(modelMatrix, null, rotation, null);
-        device.defaultQueue.writeBuffer(vertexUniformBuffer, 0, modelMatrix);
+        device.defaultQueue.writeBuffer(modelMatrixUniformBuffer, 0, modelMatrix);
 
 
         // Second object
         utils.xformMatrix(modelMatrix, translation, rotation, null);
-        device.defaultQueue.writeBuffer(vertexUniformBuffer, offset, modelMatrix);
+        device.defaultQueue.writeBuffer(modelMatrixUniformBuffer, offset, modelMatrix);
 
         
 

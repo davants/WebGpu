@@ -1,5 +1,24 @@
 WebGpu
 
+
+
+	Version 0.008
+	
+		Done - commit!
+	
+		ToDo - What Gpu variables need to be stored for each individual object?
+		
+			Note - SCOPE THIS DOWN for this version. Meaning, don't include the image data yet.
+			
+			
+		Done - Create a group class and another class that holds an array of those group class objects.		
+				
+		Done - Rename variables and so on because things are a big confusion at the moment.
+			For example, the view projection and the model matrix are basically the same names.
+			
+			Done - Rename the projectview buffer and the  buffer that holds all the model matricies.
+			
+
 	Version 0.007
 		
 		Done - commit!

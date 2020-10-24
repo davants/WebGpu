@@ -23,6 +23,7 @@
             alert('setupObject');
         },
 
+        // This takes in one group, which is made up or one or more objects.
         setupGroup(vGroup) {
 
             var vObjectGroup = vGroup["objectGroup"];
