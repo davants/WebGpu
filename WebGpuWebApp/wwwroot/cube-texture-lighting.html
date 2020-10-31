@@ -4,16 +4,7 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="css/example.css">
 
-    <script>
-
-        const offset = 256; // uniformBindGroup offset must be 256-byte aligned
-        const numberOfObject = 50;
-        const sizeOfObjectTransformationAndMoreList = offset * numberOfObject;
-
-
-     
-
-    </script>
+  
 
             <script src="utils/gl-matrix.js"></script>
     <script src="utils/utils.js"></script>
@@ -90,7 +81,132 @@ utils.addDescription(
     // Set up device and canvas swap chain  //
     //////////////////////////////////////////
 
-    const device = await adapter.requestDevice();
+            const device = await adapter.requestDevice();
+
+            class J316SceneObject {
+
+                constructor(vIndex, vObjectMatrixBuffer, fragmentUniformBuffer, sampler, texture, viewProjectionBuffer,
+                    sceneUniformBindGroupLayout) {
+                    this.mSceneUniformBindGroup;
+                    this.mIndex = vIndex;
+                    this.mOffset = vIndex * 256;
+
+                    this.mActive = true;
+
+                    this.mSceneUniformBindGroup = device.createBindGroup({
+                        layout: sceneUniformBindGroupLayout,
+                        entries: [
+                            {
+                                binding: 0,
+                                resource: {
+                                    buffer: vObjectMatrixBuffer,
+                                    offset: this.mOffset
+                                }
+                            },
+                            {
+                                binding: 1,
+                                resource: {
+                                    buffer: fragmentUniformBuffer
+                                }
+                            },
+                            {
+                                binding: 2,
+                                resource: sampler
+                            },
+                            {
+                                binding: 3,
+                                resource: texture.createView()
+                            },
+                            {
+                                binding: 4,
+                                resource: {
+                                    buffer: viewProjectionBuffer
+                                }
+                            }
+
+                        ]
+                    });
+
+                }               
+            }
+
+            // Each group is its own buffer on the Gpu.
+            // This means all the sceneObjects in each group share the same buffer; however, each sceneObject 
+            // knows its offset from the start of the buffer.
+            class J316Group {
+                constructor(numberOfObjects) {
+                    this.ObjectMatrixBuffer = device.createBuffer({
+                        size: J316Group.offset * numberOfObjects,
+                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+                    }); 
+
+                    this.mNumberOfObjects = numberOfObjects;
+
+                    this.SceneObjectList = [];
+                }
+
+                getOffset(vIndex) {
+                    return J316Group.offset * vIndex;
+                }
+
+                getNumberOfObjects() {
+                    return this.mNumberOfObjects;
+                }
+
+                getSceneObject(vIndex) {
+                    return this.SceneObjectList[vIndex];
+                }
+
+                // The client can only add up to the size of the array.
+                addSceneObject(vJ36SceneObject) {
+                    this.SceneObjectList.push(vJ36SceneObject);
+                }
+
+                
+
+                static offset = 256;
+            }
+
+            class J316GroupListContainer {
+                constructor() {
+
+                    // Create an array for the groups.
+                    this.GroupList = [];
+                }
+
+                addGroup(vNumberOfObjectsInGroup) {
+                    var vNewGroup = new J316Group(vNumberOfObjectsInGroup);
+                    this.GroupList.push(vNewGroup);
+                }
+
+                getGroup(vIndex) {
+                    return this.GroupList[vIndex];
+                }
+
+                getNumberOfGroups() {
+                    return this.GroupList.length;
+                }
+                
+            }
+
+            // This container instance holds all object groups; each group contains up to 50 object.
+            var vJ316GroupListContainer = new J316GroupListContainer();
+
+            var vNumberOfGroups = 1;
+
+            // First group number of objects.
+            var vNumberOfObjectsInFirstGroup = 2;
+
+            
+
+            for (var iGroupsCounter = 0; iGroupsCounter < vNumberOfGroups; iGroupsCounter++) {
+
+                vJ316GroupListContainer.addGroup(vNumberOfObjectsInFirstGroup);
+
+            }
+
+
+
 
     const canvas = document.getElementById("webgpu-canvas");
     canvas.width = window.innerWidth;
@@ -235,44 +351,14 @@ utils.addDescription(
 
 
            var vListOfGroups = obj["listOfGroups"];
-
     
             // see new file utils/dtsutils.js
-         //   vListOfGroups.forEach(dtsutils.setupGroup);
+            //   vListOfGroups.forEach(dtsutils.setupGroup);
 
+            // "let" means block scope. Before "let", there was only global and function scope.
+            var vSomeGroup = vJ316GroupListContainer.GroupList[0];
 
-            class J316Group {
-                constructor() {
-                    this.ObjectBuffer = device.createBuffer({
-                        size: sizeOfObjectTransformationAndMoreList,
-                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-                    });
-
-                    this.SomeValue = 10;
-                }
-
-                getOffset(vIndex) {
-                    return offset * vIndex;
-                }
-            }
-
-            class J316GroupListContainer {
-                constructor() {
-
-                    this.GroupList = new Array();
-
-                    var first2 = new J316Group();
-                    this.GroupList.push(first2);
-                }
-            }
-
-
-            var vJ316GroupListContainer = new J316GroupListContainer();
-
-
-
-
-            const modelMatrixUniformBuffer = vJ316GroupListContainer.GroupList[0].ObjectBuffer;
+            //const modelMatrixUniformBuffer = vSomeGroup.ObjectMatrixBuffer;
 
    
 
@@ -286,38 +372,7 @@ utils.addDescription(
         size: 32,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
     });
-
-
-
-
-
-
-
-
-            // WORKING HERE...
-
-            /// Below, this is just a test to create an object that holds a list of dynamically created Gpu buffers.
-            // Note, the created buffer is not being used yet.
-
-            // WORKS!!!! Not tested using the new buffer, but it should work!
-
-
-
-            // Structure 
-
-            //var vGroup = new Object();
-            //var vGroupBuffer = device.createBuffer({
-            //    size: sizeOfObjectTransformationAndMoreList,
-            //    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-            //});
-
-            //vGroup.GroupBuffer = vGroupBuffer;
-
-            //vGroupListContainer.GroupList.push(vGroup);
-
-            // Add a function to the group that returns offset for a given object in the group.
-
-
+          
 
 
 
@@ -359,13 +414,41 @@ utils.addDescription(
         ]
     });
 
-    const sceneUniformBindGroup = device.createBindGroup({
+
+
+            for (var iGroupCounter = 0; iGroupCounter < vJ316GroupListContainer.getNumberOfGroups(); iGroupCounter++) {
+
+                //alert('allocating bind group');
+
+                var vGroupItem = vJ316GroupListContainer.getGroup(iGroupCounter);
+
+                //alert(vGroupItem.mNumberOfObjects);   
+
+                for (var iGroupItemObjectCounter = 0; iGroupItemObjectCounter < vGroupItem.getNumberOfObjects(); iGroupItemObjectCounter++)
+                {
+                    var vJ316SceneObject = new J316SceneObject(iGroupItemObjectCounter,
+                        vGroupItem.ObjectMatrixBuffer,
+                        fragmentUniformBuffer,
+                        sampler,
+                        texture,
+                        viewProjectionBuffer,
+                        sceneUniformBindGroupLayout
+                    );
+
+                    vGroupItem.addSceneObject(vJ316SceneObject);
+
+                }
+            }
+
+
+
+    var sceneUniformBindGroup = device.createBindGroup({
         layout: sceneUniformBindGroupLayout,
         entries: [
             {
                 binding: 0,
                 resource: {
-                    buffer: modelMatrixUniformBuffer,
+                    buffer: vSomeGroup.ObjectMatrixBuffer,
                     offset: 0
                 }
             },
@@ -398,14 +481,14 @@ utils.addDescription(
 
 
 
-    const sceneUniformBindGroup2 = device.createBindGroup({
+    var sceneUniformBindGroup2 = device.createBindGroup({
         layout: sceneUniformBindGroupLayout,
         entries: [
             {
                 binding: 0,
                 resource: {
-                    buffer: modelMatrixUniformBuffer,
-                    offset: offset
+                    buffer: vSomeGroup.ObjectMatrixBuffer,
+                    offset: J316Group.offset
                 }
             },
             {
@@ -589,12 +672,12 @@ utils.addDescription(
 
         // First object
         utils.xformMatrix(modelMatrix, null, rotation, null);
-        device.defaultQueue.writeBuffer(modelMatrixUniformBuffer, 0, modelMatrix);
+        device.defaultQueue.writeBuffer(vSomeGroup.ObjectMatrixBuffer, 0, modelMatrix);
 
 
         // Second object
         utils.xformMatrix(modelMatrix, translation, rotation, null);
-        device.defaultQueue.writeBuffer(modelMatrixUniformBuffer, offset, modelMatrix);
+        device.defaultQueue.writeBuffer(vSomeGroup.ObjectMatrixBuffer, J316Group.offset, modelMatrix);
 
         
 
@@ -615,14 +698,35 @@ utils.addDescription(
         renderPass.setVertexBuffer(1, normalBuffer);
         renderPass.setVertexBuffer(2, uvBuffer);
 
+
+        for (var iGroupCounter = 0; iGroupCounter < vJ316GroupListContainer.getNumberOfGroups(); iGroupCounter++) {
+
+            //alert('allocating bind group');
+
+            var vGroupItem = vJ316GroupListContainer.getGroup(iGroupCounter);
+
+            //alert(vGroupItem.mNumberOfObjects);   
+
+            for (var iGroupItemObjectCounter = 0; iGroupItemObjectCounter < vGroupItem.getNumberOfObjects(); iGroupItemObjectCounter++) {
+
+                var vJ316SceneObject = vGroupItem.getSceneObject(iGroupItemObjectCounter);
+
+                renderPass.setBindGroup(0, vJ316SceneObject.mSceneUniformBindGroup);
+                renderPass.draw(numVertices, 1, 0, 0);
+
+
+            }
+        }
+
+
         // First argument here refers to array index
         // in pipeline layout.bindGroupLayouts
-        renderPass.setBindGroup(0, sceneUniformBindGroup);
-        renderPass.draw(numVertices, 1, 0, 0);
+        //renderPass.setBindGroup(0, sceneUniformBindGroup);
+        //renderPass.draw(numVertices, 1, 0, 0);
 
 
-        renderPass.setBindGroup(0, sceneUniformBindGroup2);
-        renderPass.draw(numVertices, 1, 0, 0);
+        //renderPass.setBindGroup(0, sceneUniformBindGroup2);
+        //renderPass.draw(numVertices, 1, 0, 0);
 
 
         renderPass.endPass();

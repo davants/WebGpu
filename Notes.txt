@@ -1,6 +1,32 @@
 WebGpu
 
 
+	Version 0.009
+	
+		Done - Add loop logic in the draw to loop through both the group list and the 
+			object list and draw.
+	
+		Done - Update the J316SceneObject to have a constructor that takes in all the needed 
+			properties for the bind object.
+	
+		Done - J316Group class so that the number of objects can be set when calling the 
+			constructor.
+			
+			
+			
+			Done - Use the new container and the first group's vGroupItem.vSceneUniformBindGroup 
+				value.
+				
+			ToDo - Create the "SceneObject" class.
+				
+			Done - Add a getNumberOfGroups() function to the container.
+			
+			Done - Populate the container, all the objects in the first group, populate the	
+				vGroupItem.vSceneUniformBindGroup
+			
+			Done - Create group container with a group that contains 2 objects.
+			
+		Notes - Arrays and Object - https://www.w3schools.com/js/js_arrays.asp
 
 	Version 0.008
 	
